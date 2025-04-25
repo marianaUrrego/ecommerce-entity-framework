@@ -9,7 +9,6 @@ using Microsoft.OpenApi.Models;
 using MediatR;
 using System.Reflection;
 using ecommerce.Infrastructure.Cache;
-using ecommerce.Domain.Servicios;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,9 +22,6 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1"
     });
 });
-
-// Agregar AutoMapper al contenedor de dependencias
-builder.Services.AddAutoMapper(typeof(MappingProfile)); //perfil de mapeo
 
 // Agregar servicios al contenedor de dependencias
 builder.Services.AddControllers();
@@ -47,12 +43,10 @@ builder.Services.AddScoped<IOrdenCompraRepository, OrdenCompraRepository>();
 // Registrar la Factory
 builder.Services.AddScoped<OrdenCompraFactory>();
 
-// Registrar el Handler para crear la orden
-builder.Services.AddScoped<CrearOrdenCompraHandler>();
 
-// Agregar la infraestructura de base de datos
+// Configuración de DbContext con InMemoryDatabase
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseInMemoryDatabase("EcommerceDb"));
 
 builder.Services.AddScoped<ICacheService, MemoryCacheService>();
 

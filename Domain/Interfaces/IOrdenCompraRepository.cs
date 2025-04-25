@@ -5,8 +5,13 @@ namespace ecommerce.Domain.Interfaces
 {
     public interface IOrdenCompraRepository
     {
-        Task AddAsync(OrdenCompra orden);
-        Task<OrdenCompra?> GetByIdAsync(Guid id);
-        Task<List<OrdenCompra>> GetAllAsync();
+        IUnitOfWork UnitOfWork { get; }
+
+        Task AddAsync(OrdenCompra orden, CancellationToken cancellationToken = default);
+        Task<OrdenCompra?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<List<OrdenCompra>> GetAllAsync(CancellationToken cancellationToken = default);
+
+        void Update(OrdenCompra orden);
+        void Remove(OrdenCompra orden);
     }
 }

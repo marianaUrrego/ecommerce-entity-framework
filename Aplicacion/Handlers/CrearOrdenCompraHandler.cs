@@ -9,34 +9,35 @@ using AutoMapper;
 
 namespace ecommerce.Aplicacion.Handlers
 {
-    public class CrearOrdenCompraHandler
+    public class CrearOrdenCompraCommandHandler : IRequestHandler<CrearOrdenCompraCommand, Guid>
     {
+        private readonly IOrdenCompraRepository _ordenCompraRepository;
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IMapper _mapper;
 
-        public CrearOrdenCompraHandler(IUnitOfWork unitOfWork, IMapper mapper)
+        public CrearOrdenCompraCommandHandler(IOrdenCompraRepository ordenCompraRepository, IUnitOfWork unitOfWork)
         {
+            _ordenCompraRepository = ordenCompraRepository;
             _unitOfWork = unitOfWork;
-            _mapper = mapper;
         }
 
-        public async Task<OrdenCompra> Handle(CrearOrdenCompraCommand command, CancellationToken cancellationToken)
+        public async Task<Guid> Handle(CrearOrdenCompraCommand request, CancellationToken cancellationToken)
         {
-            // Mapear los items del DTO al dominio
-            var items = command.Items.Select(i =>
-                new ItemOrden(i.ProductoId, i.Cantidad, i.PrecioUnitario)).ToList();
+            var direccion = new DireccionEntrega(
+                request.DireccionEntrega.Ciudad,
+                request.DireccionEntrega.Direccion
+            );
 
-            // Crear dirección desde el DTO
-            var direccion = new DireccionEntrega(command.DireccionEntrega.Ciudad, command.DireccionEntrega.Direccion);
+            var items = request.Items.Select(i =>
+                new ItemOrden(i.ProductoId, i.Cantidad, i.PrecioUnitario)
+            ).ToList();
 
-            // Crear la orden
-            var orden = new OrdenCompra(command.ClienteId, items, direccion);
+            var orden = new OrdenCompra(request.ClienteId, items, direccion);
 
-            // Guardar en la base de datos
-            await _unitOfWork.Ordenes.AddAsync(orden);
-            await _unitOfWork.CommitAsync();
+            await _ordenCompraRepository.AddAsync(orden, cancellationToken);
 
-            return orden;
+            await _unitOfWork.SaveEntitiesAsync(cancellationToken);
+
+            return orden.Id;
         }
     }
 }

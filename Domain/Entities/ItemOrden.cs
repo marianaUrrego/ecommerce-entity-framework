@@ -6,7 +6,7 @@
         public int Cantidad { get; private set; }
         public decimal PrecioUnitario { get; private set; }
 
-        // Calculado automáticamente
+        // Calculado
         public decimal Subtotal => PrecioUnitario * Cantidad;
 
         // Constructor requerido por EF Core

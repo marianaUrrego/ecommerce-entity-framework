@@ -10,31 +10,45 @@ namespace ecommerce.Infrastructure.Repositories
     public class OrdenCompraRepository : IOrdenCompraRepository
     {
         private readonly AppDbContext _context;
-        private readonly ICacheService _cache;
 
-        public OrdenCompraRepository(AppDbContext context, ICacheService cache)
+        public OrdenCompraRepository(AppDbContext context)
         {
             _context = context;
-            _cache = cache;
         }
 
-        public async Task AddAsync(OrdenCompra orden)
+        // Implementa la propiedad UnitOfWork
+        public IUnitOfWork UnitOfWork => _context;
+
+        public async Task AddAsync(OrdenCompra orden, CancellationToken cancellationToken = default)
         {
-            await _context.Ordenes.AddAsync(orden);
+            await _context.Ordenes.AddAsync(orden, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task<OrdenCompra?> GetByIdAsync(Guid id)
-        {
-            return await _context.Ordenes
-                .Include(o => o.Items)
-                .FirstOrDefaultAsync(o => o.Id == id);
-        }
-
-        public async Task<List<OrdenCompra>> GetAllAsync()
+        public async Task<OrdenCompra?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             return await _context.Ordenes
                 .Include(o => o.Items)
-                .ToListAsync();
+                .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
+        }
+
+        public async Task<List<OrdenCompra>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            return await _context.Ordenes
+                .Include(o => o.Items)
+                .ToListAsync(cancellationToken);
+        }
+
+        // Implementa el método Update
+        public void Update(OrdenCompra orden)
+        {
+            _context.Entry(orden).State = EntityState.Modified;
+        }
+
+        // Implementa el método Remove
+        public void Remove(OrdenCompra orden)
+        {
+            _context.Ordenes.Remove(orden);
         }
     }
 }

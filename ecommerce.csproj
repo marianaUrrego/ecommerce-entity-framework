@@ -29,7 +29,6 @@
 
   <ItemGroup>
     <Folder Include="API\Middleware\" />
-    <Folder Include="Aplicacion\Queries\" />
     <Folder Include="Infrastructure\Configuration\" />
   </ItemGroup>
 

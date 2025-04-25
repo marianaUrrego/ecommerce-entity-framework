@@ -8,45 +8,33 @@ using ecommerce.Aplicacion.Commands;
 using ecommerce.Aplicacion.Handlers;
 using ecommerce.Infrastructure;
 using AutoMapper;
+using MediatR;
 
 namespace ecommerce.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class OrdenCompraController : ControllerBase
+    public class OrdenesController : ControllerBase
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly CrearOrdenCompraHandler _crearOrdenCompraHandler;
-        private readonly IMapper _mapper;
+        private readonly IMediator _mediator;
 
-        public OrdenCompraController(IUnitOfWork unitOfWork, CrearOrdenCompraHandler crearOrdenCompraHandler, IMapper mapper)
+        public OrdenesController(IMediator mediator)
         {
-            _unitOfWork = unitOfWork;
-            _crearOrdenCompraHandler = crearOrdenCompraHandler;
-            _mapper = mapper;
+            _mediator = mediator;
         }
 
         [HttpPost]
-        public async Task<IActionResult> CrearOrden([FromBody] CrearOrdenCompraDto dto, CancellationToken cancellationToken)  // Incluir cancellationToken
+        public async Task<IActionResult> CrearOrden([FromBody] CrearOrdenCompraCommand command)
         {
-            // Mapear el DTO a Command usando AutoMapper y enviar al Handler
-            var command = _mapper.Map<CrearOrdenCompraCommand>(dto);
-
-            // Usar el handler para crear la orden, pasando el cancellationToken
-            var orden = await _crearOrdenCompraHandler.Handle(command, cancellationToken);  // Pasa el cancellationToken aquí
-
-            // Retornar la respuesta con el detalle de la orden
-            return CreatedAtAction(nameof(ObtenerOrdenPorId), new { id = orden.Id }, orden);
+            var ordenId = await _mediator.Send(command);
+            return CreatedAtAction(nameof(ObtenerOrden), new { id = ordenId }, ordenId);
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> ObtenerOrdenPorId(Guid id)
+        public async Task<IActionResult> ObtenerOrden(Guid id, [FromServices] IOrdenCompraRepository repo)
         {
-            var orden = await _unitOfWork.Ordenes.GetByIdAsync(id);
-            if (orden == null)
-                return NotFound();
-
-            return Ok(orden);
+            var orden = await repo.GetByIdAsync(id);
+            return orden is null ? NotFound() : Ok(orden);
         }
     }
 }

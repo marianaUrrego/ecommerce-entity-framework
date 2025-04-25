@@ -12,7 +12,7 @@ namespace ecommerce.Domain.Aggregates
         public List<ItemOrden> Items { get; private set; } = new();
 
         public EstadoOrden Estado { get; private set; }
-        public DireccionEntrega DireccionEntrega { get; private set; }
+        public DireccionEntrega DireccionEntrega { get; private set; } = null!;
 
         public decimal Total
         {

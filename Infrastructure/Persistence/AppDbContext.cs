@@ -10,43 +10,58 @@ using ecommerce.Domain.Aggregates;
 
 namespace ecommerce.Infrastructure.Persistence
 {
-    public class AppDbContext : DbContext
+    public class AppDbContext : DbContext, IUnitOfWork
     {
         public DbSet<OrdenCompra> Ordenes { get; set; }
         public DbSet<ItemOrden> ItemsOrden { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-        // Configura las entidades
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Mapeo de la entidad OrdenCompra
-            modelBuilder.Entity<OrdenCompra>()
-                .HasKey(o => o.Id); // La clave primaria
+            // OrdenCompra
+            modelBuilder.Entity<OrdenCompra>(oc =>
+            {
+                oc.HasKey(o => o.Id);
 
-            modelBuilder.Entity<OrdenCompra>()
-                .HasMany(o => o.Items) // Relación uno a muchos con Items
-                .WithOne() // No se especifica una entidad hija en este caso
-                .HasForeignKey(i => i.ProductoId); // Relación con ItemOrden
+                oc.OwnsOne(o => o.DireccionEntrega);
 
-            // Mapeo de la entidad ItemOrden
+                oc.HasMany(o => o.Items)
+                  .WithOne()
+                  .HasForeignKey(i => i.ProductoId);
+            });
+            // ItemOrden
             modelBuilder.Entity<ItemOrden>()
-                .HasKey(i => new { i.ProductoId, i.Cantidad }); // Puedes elegir otra clave primaria
+                .HasKey(i => i.ProductoId); 
         }
 
-        // Implementación de UnitOfWork
-        public async Task CommitAsync(CancellationToken cancellationToken = default)
+        // Implementación de IUnitOfWork
+        public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            await SaveChangesAsync(cancellationToken);
+            return await base.SaveChangesAsync(cancellationToken);
         }
 
-        // Método para guardar cambios en la base de datos
         public async Task<bool> SaveEntitiesAsync(CancellationToken cancellationToken = default)
         {
-            var result = await SaveChangesAsync(cancellationToken);
+            var result = await base.SaveChangesAsync(cancellationToken);
             return result > 0;
+        }
+
+        public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
+        {
+            await Database.BeginTransactionAsync(cancellationToken);
+        }
+
+        public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
+        {
+            await Database.CommitTransactionAsync(cancellationToken);
+        }
+
+        public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
+        {
+            await Database.RollbackTransactionAsync(cancellationToken);
         }
     }
 }
